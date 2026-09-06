@@ -10,6 +10,11 @@
 </head>
 <body>
 
+<div class="top-bar">
+  <button id="theme-toggle" class="btn-small">🌓 Toggle Theme</button>
+  <button id="admin-login" class="btn-small">🔒 Admin Login</button>
+  <button id="admin-logout" class="btn-small" style="display:none;">🔓 Logout</button>
+</div>
 <header class="masthead">
   <div class="masthead-inner">
     <h1 id="site-title">THE FEED</h1>
@@ -41,6 +46,9 @@
       </label>
       <label>Details
         <textarea id="f-body" rows="3" maxlength="400"></textarea>
+      </label>
+      <label>Upload Media (Image/MP4 optional)
+        <input type="file" id="f-file" accept="image/*,video/mp4">
       </label>
       <label>Link (optional — video, image, post)
         <input type="url" id="f-link" placeholder="https://...">

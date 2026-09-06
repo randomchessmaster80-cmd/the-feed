@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toolverse — a small galaxy of useful things</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0d17;
+    --bg-deep: #05060c;
+    --panel: #10142400;
+    --violet: #8b6bff;
+    --cyan: #4fe3c1;
+    --coral: #ff7a68;
+    --text: #eef0f8;
+    --text-dim: #9aa0b8;
+    --line: rgba(238,240,248,0.10);
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'Inter', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+  #canvas-wrap{
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 640px;
+  }
+  #three-canvas{
+    position: absolute;
+    inset: 0;
+    display:block;
+    cursor: grab;
+    touch-action: none;
+  }
+  #three-canvas.grabbing{ cursor: grabbing; }
+  .hero-copy{
+    position: absolute;
+    top: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 5;
+    pointer-events: none;
+    width: min(90%, 780px);
+  }
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 18px;
+    opacity: 0.9;
+  }
+  h1{
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2.2rem, 6vw, 4.2rem);
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+  }
+  h1 .glow{
+    background: linear-gradient(90deg, var(--violet), var(--cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub{
+    margin-top: 20px;
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .hint{
+    position: absolute;
+    bottom: 6%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    z-index: 5;
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    animation: bob 2.6s ease-in-out infinite;
+  }
+  .hint .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
+  }
+  @keyframes bob{
+    0%,100%{ transform: translateX(-50%) translateY(0); }
+    50%{ transform: translateX(-50%) translateY(-8px); }
+  }
+  .label-layer{
+    position:absolute; inset:0; z-index:4; pointer-events:none;
+  }
+  .orb-label{
+    position:absolute;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    background: rgba(10,13,23,0.55);
+    border: 1px solid var(--line);
+    padding: 5px 10px;
+    border-radius: 100px;
+    backdrop-filter: blur(6px);
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .orb-label.visible{ opacity: 1; }
+
+  /* ---- toolkit grid section ---- */
+  .toolkit{
+    position: relative;
+    padding: 90px 24px 120px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  .toolkit-head{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 46px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 28px;
+  }
+  .toolkit-head h2{
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+    font-weight: 600;
+  }
+  .toolkit-head p{
+    color: var(--text-dim);
+    max-width: 380px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 760px){ .grid{ grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px){ .grid{ grid-template-columns: 1fr; } }
+  .card{
+    background: linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+    cursor: pointer;
+    transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover{
+    transform: translateY(-4px);
+    border-color: rgba(139,107,255,0.5);
+  }
+  .card::before{
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background: var(--card-accent, var(--violet));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .card:hover::before{ transform: scaleX(1); }
+  .card .tag{
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--card-accent, var(--violet));
+    display:block;
+    margin-bottom: 14px;
+  }
+  .card h3{
+    font-family: var(--display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .card p{
+    color: var(--text-dim);
+    font-size: 0.86rem;
+    line-height: 1.45;
+  }
+  footer{
+    text-align:center;
+    padding: 40px 20px 60px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ---- tool modal ---- */
+  .overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(5,6,12,0.72);
+    backdrop-filter: blur(10px);
+    z-index: 50;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    padding: 24px;
+  }
+  .overlay.active{ opacity: 1; pointer-events: all; }
+  .modal{
+    width: min(560px, 100%);
+    max-height: 84vh;
+    overflow-y: auto;
+    background: linear-gradient(165deg, #12162a, #0b0e1a);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 30px 30px 26px;
+    transform: scale(0.92) translateY(16px);
+    transition: transform 0.35s cubic-bezier(.2,.9,.25,1.15);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02);
+  }
+  .overlay.active .modal{ transform: scale(1) translateY(0); }
+  .modal-head{
+    display:flex;
+    justify-content: space-between;
+    align-items:flex-start;
+    margin-bottom: 22px;
+  }
+  .modal-head .tag{
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--modal-accent, var(--violet));
+    display:block;
+    margin-bottom: 8px;
+  }
+  .modal-head h3{
+    font-family: var(--display);
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+  .close-btn{
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--line);
+    color: var(--text);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display:flex; align-items:center; justify-content:center;
+    transition: background 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .close-btn:hover{ background: rgba(255,255,255,0.14); transform: rotate(90deg); }
+  .close-btn:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible{
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
+
+  /* tool internals */
+  .tool-row{ display:flex; gap:10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tool-row label{ font-size: 0.78rem; color: var(--text-dim); display:block; margin-bottom:6px; font-family: var(--mono); letter-spacing:0.03em;}
+  .tool-row .field{ flex:1; min-width: 120px; }
+  input[type=text], input[type=number], select, textarea{
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 9px;
+    font-family: var(--body);
+    font-size: 0.95rem;
+  }
+  textarea{ resize: vertical; min-height: 90px; }
+  .btn{
+    background: var(--modal-accent, var(--violet));
+    color: #0a0d17;
+    border: none;
+    padding: 11px 18px;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.15s ease;
+    font-family: var(--body);
+  }
+  .btn:hover{ filter: brightness(1.12); }
+  .btn:active{ transform: scale(0.97); }
+  .btn.secondary{
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    border: 1px solid var(--line);
+  }
+  .readout{
+    font-family: var(--mono);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 14px;
+    margin-top: 10px;
+    font-size: 1.05rem;
+    word-break: break-all;
+    min-height: 24px;
+  }
+  .calc-display{
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    text-align: right;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    min-height: 30px;
+    overflow-x: auto;
+  }
+  .calc-grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .calc-grid button{
+    padding: 14px 0;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    cursor:pointer;
+    transition: background 0.15s ease;
+  }
+  .calc-grid button:hover{ background: rgba(255,255,255,0.09); }
+  .calc-grid button.op{ color: var(--cyan); }
+  .calc-grid button.eq{ background: var(--modal-accent, var(--violet)); color:#0a0d17; font-weight:700; }
+  .swatch-row{ display:flex; gap:8px; margin-top:12px; flex-wrap: wrap; }
+  .swatch{
+    flex:1; min-width: 70px; height: 64px;
+    border-radius: 9px;
+    display:flex; align-items:flex-end; justify-content:center;
+    padding-bottom: 6px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: rgba(0,0,0,0.65);
+    cursor: pointer;
+    position: relative;
+  }
+  .swatch span{ background: rgba(255,255,255,0.55); padding: 2px 5px; border-radius: 4px; }
+  .timer-display{
+    font-family: var(--mono);
+    font-size: 3.2rem;
+    text-align: center;
+    margin: 20px 0 10px;
+    letter-spacing: 0.02em;
+  }
+  .timer-controls{ display:flex; gap:10px; justify-content:center; margin-top: 10px; }
+  .stat-row{ display:flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .stat{
+    flex:1; min-width: 90px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 12px;
+    text-align:center;
+  }
+  .stat .n{ font-family: var(--mono); font-size: 1.3rem; font-weight: 700; }
+  .stat .l{ font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top:4px; }
+  .checkbox-row{ display:flex; align-items:center; gap:8px; margin: 8px 0; font-size: 0.88rem; color: var(--text-dim); }
+  .checkbox-row input{ width:auto; }
+</style>
+</head>
+<body>
+
+<div id="canvas-wrap">
+  <canvas id="three-canvas"></canvas>
+  <div class="hero-copy">
+    <div class="eyebrow">a small galaxy of useful things</div>
+    <h1>Six little tools,<br><span class="glow">orbiting one page.</span></h1>
+    <p class="sub">Six little planets, drifting in their own orbits — drag any one of them to send it spinning. When you're ready to actually get something done, the real tools are waiting just below: a calculator, a converter, a timer, and more.</p>
+  </div>
+  <div class="label-layer" id="label-layer"></div>
+  <div class="hint"><span class="dot"></span> drag a planet to spin it &nbsp;·&nbsp; scroll down to open a tool</div>
+</div>
+
+<div class="toolkit">
+  <div class="toolkit-head">
+    <div>
+      <h2>The full toolkit</h2>
+      <p>Same six tools, if orbs aren't your thing. Everything runs right here in the page.</p>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<footer>TOOLVERSE · built with three.js · everything runs locally in your browser</footer>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div>
+        <span class="tag" id="modal-tag">TOOL</span>
+        <h3 id="modal-title">Title</h3>
+      </div>
+      <button class="close-btn" id="close-btn" aria-label="Close">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============ TOOL DEFINITIONS ============ */
+const TOOLS = [
+  {
+    id: 'calc', tag: 'CALCULATOR', title: 'Quick Calculator', accent: '#8b6bff',
+    desc: 'A no-nonsense calculator for the sums you don\'t want to do in your head.',
+    body: () => {
+      return `
+        <div class="calc-display" id="calc-display">0</div>
+        <div class="calc-grid" id="calc-grid"></div>
+      `;
+    },
+    init: () => {
+      let expr = '';
+      const display = document.getElementById('calc-display');
+      const grid = document.getElementById('calc-grid');
+      const keys = ['7','8','9','÷','4','5','6','×','1','2','3','−','0','.','C','+','⌫','=','','%'];
+      const layout = [
+        ['7','8','9','÷'],
+        ['4','5','6','×'],
+        ['1','2','3','−'],
+        ['0','.','⌫','+'],
+        ['C','%','','=']
+      ];
+      layout.flat().forEach(k=>{
+        if(k===''){ const s=document.createElement('div'); grid.appendChild(s); return; }
+        const b = document.createElement('button');
+        b.textContent = k;
+        if(['÷','×','−','+','%'].includes(k)) b.classList.add('op');
+        if(k==='=') b.classList.add('eq');
+        b.addEventListener('click', ()=>{
+          if(k==='C'){ expr=''; }
+          else if(k==='⌫'){ expr = expr.slice(0,-1); }
+          else if(k==='='){
+            try{
+              let safe = expr.replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-').replace(/%/g,'/100');
+              if(!/^[0-9+\-*/.() ]+$/.test(safe)) throw new Error('bad');
+              // eslint-disable-next-line no-new-func
+              const result = Function('"use strict";return (' + safe + ')')();
+              expr = String(Math.round(result*1e10)/1e10);
+            }catch(e){ expr = 'Error'; }
+          } else {
+            expr += k;
+          }
+          display.textContent = expr === '' ? '0' : expr;
+        });
+        grid.appendChild(b);
+      });
+    }
+  },
+  {
+    id: 'convert', tag: 'CONVERTER', title: 'Unit Converter', accent: '#4fe3c1',
+    desc: 'Length, weight, and temperature conversions, instantly.',
+    body: () => `
+      <div class="tool-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="conv-cat">
+            <option value="length">Length</option>
+            <option value="weight">Weight</option>
+            <option value="temp">Temperature</option>
+          </select>
+        </div>
+      </div>
+      <div class="tool-row">
+        <div class="field">
+          <label>From</label>
+          <input type="number" id="conv-value" value="1" step="any">
+        </div>
+        <div class="field">
+          <label>Unit</label>
+          <select id="conv-from"></select>
+        </div>
+        <div class="field">
+          <label>To unit</label>
+          <select id="conv-to"></select>
+        </div>
+      </div>
+      <div class="readout" id="conv-result">—</div>
+    `,
+    init: () => {
+      const units = {
+        length: { m:1, km:1000, cm:0.01, mm:0.001, mi:1609.34, yd:0.9144, ft:0.3048, in:0.0254 },
+        weight: { kg:1, g:0.001, lb:0.453592, oz:0.0283495, t:1000 },
+        temp: { C:'C', F:'F', K:'K' }
+      };
+      const cat = document.getElementById('conv-cat');
+      const from = document.getElementById('conv-from');
+      const to = document.getElementById('conv-to');
+      const val = document.getElementById('conv-value');
+      const result = document.getElementById('conv-result');
+      function populate(){
+        const keys = Object.keys(units[cat.value]);
+        from.innerHTML = keys.map(k=>`<option value="${k}">${k}</option>`).join('');
+        to.innerHTML = keys.map((k,i)=>`<option value="${k}" ${i===1?'selected':''}>${k}</option>`).join('');
+        compute();
+      }
+      function tempToC(v,u){ if(u==='C') return v; if(u==='F') return (v-32)*5/9; if(u==='K') return v-273.15; }
+      function cToTemp(v,u){ if(u==='C') return v; if(u==='F') return v*9/5+32; if(u==='K') return v+273.15; }
+      function compute(){
+        const v = parseFloat(val.value);
+        if(isNaN(v)){ result.textContent = 'Enter a number'; return; }
+        if(cat.value === 'temp'){
+          const c = tempToC(v, from.value);
+          const out = cToTemp(c, to.value);
+          result.textContent = `${v} °${from.value} = ${Math.round(out*100)/100} °${to.value}`;
+        } else {
+          const table = units[cat.value];
+          const base = v * table[from.value];
+          const out = base / table[to.value];
+          result.textContent = `${v} ${from.value} = ${Math.round(out*1e6)/1e6} ${to.value}`;
+        }
+      }
+      cat.addEventListener('change', populate);
+      from.addEventListener('change', compute);
+      to.addEventListener('change', compute);
+      val.addEventListener('input', compute);
+      populate();
+    }
+  },
+  {
+    id: 'password', tag: 'GENERATOR', title: 'Password Generator', accent: '#ff7a68',
+    desc: 'Random, strong passwords with the options you actually need.',
+    body: () => `
+      <div class="tool-row">
+        <div class="field">
+          <label>Length: <span id="pw-len-label">16</span></label>
+          <input type="range" id="pw-len" min="6" max="40" value="16">
+        </div>
+      </div>
+      <div class="checkbox-row"><input type="checkbox" id="pw-upper" checked> Uppercase letters (A–Z)</div>
+      <div class="checkbox-row"><input type="checkbox" id="pw-lower" checked> Lowercase letters (a–z)</div>
+      <div class="checkbox-row"><input type="checkbox" id="pw-nums" checked> Numbers (0–9)</div>
+      <div class="checkbox-row"><input type="checkbox" id="pw-symbols" checked> Symbols (!@#$...)</div>
+      <div class="readout" id="pw-result" style="font-size:1.15rem;">—</div>
+      <div class="tool-row" style="margin-top:14px;">
+        <button class="btn" id="pw-generate">Generate</button>
+        <button class="btn secondary" id="pw-copy">Copy</button>
+      </div>
+    `,
+    init: () => {
+      const len = document.getElementById('pw-len');
+      const lenLabel = document.getElementById('pw-len-label');
+      const upper = document.getElementById('pw-upper');
+      const lower = document.getElementById('pw-lower');
+      const nums = document.getElementById('pw-nums');
+      const symbols = document.getElementById('pw-symbols');
+      const result = document.getElementById('pw-result');
+      const gen = document.getElementById('pw-generate');
+      const copyBtn = document.getElementById('pw-copy');
+      len.addEventListener('input', ()=> lenLabel.textContent = len.value);
+      function generate(){
+        let charset = '';
+        if(upper.checked) charset += 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        if(lower.checked) charset += 'abcdefghijkmnpqrstuvwxyz';
+        if(nums.checked) charset += '23456789';
+        if(symbols.checked) charset += '!@#$%^&*-_=+?';
+        if(charset === ''){ result.textContent = 'Pick at least one option'; return; }
+        const arr = new Uint32Array(parseInt(len.value));
+        crypto.getRandomValues(arr);
+        let out = '';
+        for(let i=0;i<arr.length;i++){ out += charset[arr[i] % charset.length]; }
+        result.textContent = out;
+      }
+      gen.addEventListener('click', generate);
+      copyBtn.addEventListener('click', ()=>{
+        navigator.clipboard.writeText(result.textContent).then(()=>{
+          copyBtn.textContent = 'Copied!';
+          setTimeout(()=> copyBtn.textContent = 'Copy', 1200);
+        });
+      });
+      generate();
+    }
+  },
+  {
+    id: 'timer', tag: 'FOCUS TIMER', title: 'Pomodoro Timer', accent: '#8b6bff',
+    desc: 'Twenty-five minutes on, five minutes off. Simple as that.',
+    body: () => `
+      <div class="timer-display" id="timer-display">25:00</div>
+      <div class="tool-row" style="justify-content:center;">
+        <div class="field" style="max-width:140px;">
+          <label>Focus (min)</label>
+          <input type="number" id="timer-focus" value="25" min="1" max="90">
+        </div>
+        <div class="field" style="max-width:140px;">
+          <label>Break (min)</label>
+          <input type="number" id="timer-break" value="5" min="1" max="30">
+        </div>
+      </div>
+      <div class="timer-controls">
+        <button class="btn" id="timer-start">Start</button>
+        <button class="btn secondary" id="timer-reset">Reset</button>
+      </div>
+      <p style="text-align:center; margin-top:14px; color:var(--text-dim); font-size:0.85rem;" id="timer-phase">Focus session</p>
+    `,
+    init: () => {
+      const display = document.getElementById('timer-display');
+      const focusInput = document.getElementById('timer-focus');
+      const breakInput = document.getElementById('timer-break');
+      const startBtn = document.getElementById('timer-start');
+      const resetBtn = document.getElementById('timer-reset');
+      const phaseLabel = document.getElementById('timer-phase');
+      let seconds = parseInt(focusInput.value)*60;
+      let isBreak = false;
+      let running = false;
+      let interval = null;
+      function render(){
+        const m = Math.floor(seconds/60).toString().padStart(2,'0');
+        const s = (seconds%60).toString().padStart(2,'0');
+        display.textContent = `${m}:${s}`;
+      }
+      function tick(){
+        if(seconds <= 0){
+          isBreak = !isBreak;
+          seconds = (isBreak ? parseInt(breakInput.value) : parseInt(focusInput.value)) * 60;
+          phaseLabel.textContent = isBreak ? 'Break time' : 'Focus session';
+        } else {
+          seconds--;
+        }
+        render();
+      }
+      startBtn.addEventListener('click', ()=>{
+        if(running){
+          clearInterval(interval);
+          running = false;
+          startBtn.textContent = 'Start';
+        } else {
+          running = true;
+          startBtn.textContent = 'Pause';
+          interval = setInterval(tick, 1000);
+        }
+      });
+      resetBtn.addEventListener('click', ()=>{
+        clearInterval(interval);
+        running = false;
+        isBreak = false;
+        startBtn.textContent = 'Start';
+        seconds = parseInt(focusInput.value)*60;
+        phaseLabel.textContent = 'Focus session';
+        render();
+      });
+      focusInput.addEventListener('change', ()=>{ if(!running && !isBreak){ seconds = parseInt(focusInput.value)*60; render(); }});
+      render();
+    }
+  },
+  {
+    id: 'palette', tag: 'DESIGN', title: 'Color Palette Generator', accent: '#4fe3c1',
+    desc: 'Generate a harmonious five-color palette, click any swatch to copy its hex.',
+    body: () => `
+      <div class="swatch-row" id="palette-row"></div>
+      <div class="tool-row" style="margin-top:16px;">
+        <button class="btn" id="palette-generate">New Palette</button>
+      </div>
+      <p style="margin-top:10px; color:var(--text-dim); font-size:0.8rem;">Click a swatch to copy its hex code.</p>
+    `,
+    init: () => {
+      const row = document.getElementById('palette-row');
+      const genBtn = document.getElementById('palette-generate');
+      function hslToHex(h,s,l){
+        s/=100; l/=100;
+        const k = n => (n + h/30) % 12;
+        const a = s * Math.min(l, 1-l);
+        const f = n => l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n), 1)));
+        const toHex = x => Math.round(255*x).toString(16).padStart(2,'0');
+        return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+      }
+      function generate(){
+        row.innerHTML = '';
+        const baseHue = Math.floor(Math.random()*360);
+        const scheme = Math.random() > 0.5 ? [0,30,60,180,210] : [0,15,-15,150,165];
+        scheme.forEach((offset,i)=>{
+          const hue = (baseHue + offset + 360) % 360;
+          const light = 30 + i*12;
+          const hex = hslToHex(hue, 65, light);
+          const sw = document.createElement('div');
+          sw.className = 'swatch';
+          sw.style.background = hex;
+          sw.innerHTML = `<span>${hex}</span>`;
+          sw.addEventListener('click', ()=>{
+            navigator.clipboard.writeText(hex);
+            sw.innerHTML = `<span>copied!</span>`;
+            setTimeout(()=> sw.innerHTML = `<span>${hex}</span>`, 900);
+          });
+          row.appendChild(sw);
+        });
+      }
+      genBtn.addEventListener('click', generate);
+      generate();
+    }
+  },
+  {
+    id: 'words', tag: 'TEXT', title: 'Word & Character Counter', accent: '#ff7a68',
+    desc: 'Paste anything and get an instant breakdown.',
+    body: () => `
+      <textarea id="words-input" placeholder="Paste or type text here..."></textarea>
+      <div class="stat-row">
+        <div class="stat"><div class="n" id="stat-words">0</div><div class="l">Words</div></div>
+        <div class="stat"><div class="n" id="stat-chars">0</div><div class="l">Characters</div></div>
+        <div class="stat"><div class="n" id="stat-sentences">0</div><div class="l">Sentences</div></div>
+        <div class="stat"><div class="n" id="stat-read">0</div><div class="l">Min read</div></div>
+      </div>
+    `,
+    init: () => {
+      const input = document.getElementById('words-input');
+      const wWords = document.getElementById('stat-words');
+      const wChars = document.getElementById('stat-chars');
+      const wSentences = document.getElementById('stat-sentences');
+      const wRead = document.getElementById('stat-read');
+      input.addEventListener('input', ()=>{
+        const text = input.value;
+        const words = text.trim() === '' ? [] : text.trim().split(/\s+/);
+        const sentences = text.trim() === '' ? [] : text.split(/[.!?]+/).filter(s=>s.trim().length);
+        wWords.textContent = words.length;
+        wChars.textContent = text.length;
+        wSentences.textContent = sentences.length;
+        wRead.textContent = Math.max(1, Math.ceil(words.length/200)) || 0;
+      });
+    }
+  },
+  {
+    id: 'vm', tag: 'SANDBOX', title: 'Virtual Machine', accent: '#4fe3c1',
+    desc: 'A disposable JavaScript machine, isolated from this page. Every run boots a fresh one.',
+    body: () => `
+      <p style="color:var(--text-dim); font-size:0.82rem; margin-bottom:10px; line-height:1.5;">
+        Code runs inside a sandboxed iframe with its own opaque origin — it can't touch this page,
+        your cookies, or anything else on the site. Hit Run and a brand new machine boots for that one execution.
+      </p>
+      <textarea id="vm-code" style="min-height:130px;">console.log("hello from inside the machine");
+console.log("2 to the power of 10 is", 2 ** 10);
+[1,2,3].map(n => n * 2)</textarea>
+      <div class="tool-row" style="margin-top:12px;">
+        <button class="btn" id="vm-run">▶ Run</button>
+        <button class="btn secondary" id="vm-clear">Clear output</button>
+      </div>
+      <div class="readout" id="vm-output" style="min-height:90px; white-space:pre-wrap; font-size:0.85rem;">// output will appear here</div>
+      <p style="color:var(--text-dim); font-size:0.72rem; margin-top:10px;" id="vm-status">Machine idle.</p>
+    `,
+    init: () => {
+      const codeEl = document.getElementById('vm-code');
+      const outputEl = document.getElementById('vm-output');
+      const statusEl = document.getElementById('vm-status');
+      const runBtn = document.getElementById('vm-run');
+      const clearBtn = document.getElementById('vm-clear');
+      let iframe = null;
+      let messageHandler = null;
+
+      function bootMachine(){
+        if(iframe) iframe.remove();
+        if(messageHandler) window.removeEventListener('message', messageHandler);
+        iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.setAttribute('sandbox', 'allow-scripts');
+        iframe.srcdoc = `<script>
+          window.addEventListener('message', function(e){
+            var logs = [];
+            var origLog = console.log;
+            console.log = function(){ logs.push(Array.prototype.slice.call(arguments).map(function(a){
+              return typeof a === 'object' ? JSON.stringify(a) : String(a);
+            }).join(' ')); };
+            var result, error;
+            try { result = (0, eval)(e.data); }
+            catch(err){ error = err.message; }
+            console.log = origLog;
+            parent.postMessage({ logs: logs, result: (result === undefined ? undefined : (typeof result === 'object' ? JSON.stringify(result) : String(result))), error: error }, '*');
+          });
+        <\/script>`;
+        document.body.appendChild(iframe);
+      }
+
+      function run(){
+        outputEl.textContent = 'running...';
+        statusEl.textContent = 'Booting a fresh machine…';
+        bootMachine();
+        messageHandler = (e)=>{
+          if(!iframe || e.source !== iframe.contentWindow) return;
+          const { logs, result, error } = e.data;
+          let text = '';
+          if(logs && logs.length) text += logs.join('\n');
+          if(error){ text += (text ? '\n' : '') + 'Error: ' + error; }
+          else if(result !== undefined){ text += (text ? '\n' : '') + '=> ' + result; }
+          outputEl.textContent = text || '(no output)';
+          statusEl.textContent = 'Machine finished and was discarded.';
+        };
+        window.addEventListener('message', messageHandler);
+        iframe.onload = () => {
+          statusEl.textContent = 'Machine running your code…';
+          iframe.contentWindow.postMessage(codeEl.value, '*');
+        };
+      }
+      runBtn.addEventListener('click', run);
+      clearBtn.addEventListener('click', ()=>{
+        outputEl.textContent = '// output will appear here';
+        statusEl.textContent = 'Machine idle.';
+      });
+    }
+  }
+];
+
+/* ============ MODAL LOGIC ============ */
+const overlay = document.getElementById('overlay');
+const modalTag = document.getElementById('modal-tag');
+const modalTitle = document.getElementById('modal-title');
+const modalBody = document.getElementById('modal-body');
+const modal = document.getElementById('modal');
+const closeBtn = document.getElementById('close-btn');
+
+function openTool(tool){
+  modalTag.textContent = tool.tag;
+  modalTitle.textContent = tool.title;
+  modal.style.setProperty('--modal-accent', tool.accent);
+  modalBody.innerHTML = tool.body();
+  overlay.classList.add('active');
+  requestAnimationFrame(()=> tool.init());
+}
+function closeTool(){
+  overlay.classList.remove('active');
+}
+closeBtn.addEventListener('click', closeTool);
+overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeTool(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeTool(); });
+
+/* ============ GRID CARDS ============ */
+const grid = document.getElementById('grid');
+TOOLS.forEach(tool=>{
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.setProperty('--card-accent', tool.accent);
+  card.innerHTML = `<span class="tag">${tool.tag}</span><h3>${tool.title}</h3><p>${tool.desc}</p>`;
+  card.addEventListener('click', ()=> openTool(tool));
+  grid.appendChild(card);
+});
+
+/* ============ THREE.JS SCENE ============ */
+const canvas = document.getElementById('three-canvas');
+const wrap = document.getElementById('canvas-wrap');
+const labelLayer = document.getElementById('label-layer');
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, wrap.clientWidth/wrap.clientHeight, 0.1, 1000);
+camera.position.set(0, 0, 13);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+
+// background starfield
+const starGeo = new THREE.BufferGeometry();
+const starCount = 500;
+const starPos = new Float32Array(starCount*3);
+for(let i=0;i<starCount;i++){
+  starPos[i*3] = (Math.random()-0.5)*80;
+  starPos[i*3+1] = (Math.random()-0.5)*80;
+  starPos[i*3+2] = (Math.random()-0.5)*80 - 10;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.06, transparent:true, opacity:0.6 });
+const stars = new THREE.Points(starGeo, starMat);
+scene.add(stars);
+
+// lights — a clear directional "sun" so planets get a real lit/shadow terminator
+scene.add(new THREE.HemisphereLight(0x445577, 0x0a0812, 0.55));
+const sun = new THREE.DirectionalLight(0xfff2e0, 1.6);
+sun.position.set(8, 4, 9);
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0x30304a, 0.35));
+
+const colorMap = { '#8b6bff':0x8b6bff, '#4fe3c1':0x4fe3c1, '#ff7a68':0xff7a68 };
+
+// shared soft-glow sprite texture (radial gradient, white -> transparent)
+function buildGlowTexture(){
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(64,64,0,64,64,64);
+  g.addColorStop(0, 'rgba(255,255,255,0.85)');
+  g.addColorStop(0.4, 'rgba(255,255,255,0.3)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,128,128);
+  return new THREE.CanvasTexture(c);
+}
+const glowTexture = buildGlowTexture();
+
+// procedural planet surface textures — two flavors for variety, higher resolution for realism
+function buildGasGiantTexture(hex, seed){
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const ctx = c.getContext('2d');
+  const base = new THREE.Color(hex);
+  const rand = (n)=> { const x = Math.sin(seed*999 + n*57.13) * 10000; return x - Math.floor(x); };
+  const toRgb = (col)=> `rgb(${Math.min(255,col.r*255)|0},${Math.min(255,col.g*255)|0},${Math.min(255,col.b*255)|0})`;
+
+  const bandCount = 10 + Math.floor(rand(1)*6);
+  for(let i=0;i<bandCount;i++){
+    const y0 = (i/bandCount)*256;
+    const h = 256/bandCount;
+    const shade = 0.55 + rand(i+2)*0.7;
+    ctx.fillStyle = toRgb(base.clone().multiplyScalar(shade));
+    ctx.fillRect(0, y0, 512, h+1.5);
+  }
+  // wavy distortion pass to break up hard band edges
+  const imgData = ctx.getImageData(0,0,512,256);
+  const src = new Uint8ClampedArray(imgData.data);
+  for(let y=0;y<256;y++){
+    const shift = Math.sin(y*0.09 + seed) * 6 + Math.sin(y*0.23+seed*2) * 3;
+    for(let x=0;x<512;x++){
+      const sx = ((x + Math.round(shift)) % 512 + 512) % 512;
+      const srcI = (y*512+sx)*4, dstI = (y*512+x)*4;
+      imgData.data[dstI] = src[srcI]; imgData.data[dstI+1] = src[srcI+1];
+      imgData.data[dstI+2] = src[srcI+2]; imgData.data[dstI+3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  // swirling storms
+  for(let i=0;i<7;i++){
+    const x = rand(i+10)*512, y = rand(i+20)*256, r = 20 + rand(i+30)*50;
+    const shade = 0.8 + rand(i+40)*0.7;
+    const g = ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0, `rgba(${(Math.min(255,base.r*255*shade))|0},${(Math.min(255,base.g*255*shade))|0},${(Math.min(255,base.b*255*shade))|0},0.5)`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(x,y,r,r*0.4,0,0,Math.PI*2);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.encoding = THREE.sRGBEncoding;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function buildRockyTexture(hex, seed){
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const ctx = c.getContext('2d');
+  const base = new THREE.Color(hex);
+  const rand = (n)=> { const x = Math.sin(seed*777 + n*33.71) * 10000; return x - Math.floor(x); };
+  const ocean = base.clone().multiplyScalar(0.55);
+  const land = base.clone().lerp(new THREE.Color(0xffffff), 0.35);
+
+  ctx.fillStyle = `rgb(${(ocean.r*255)|0},${(ocean.g*255)|0},${(ocean.b*255)|0})`;
+  ctx.fillRect(0,0,512,256);
+
+  // irregular continents made of overlapping soft blobs
+  ctx.fillStyle = `rgb(${(land.r*255)|0},${(land.g*255)|0},${(land.b*255)|0})`;
+  const continents = 5 + Math.floor(rand(1)*3);
+  for(let i=0;i<continents;i++){
+    const cx = rand(i+2)*512, cy = 40 + rand(i+3)*176;
+    ctx.beginPath();
+    const blobs = 6 + Math.floor(rand(i+4)*5);
+    for(let b=0;b<blobs;b++){
+      const ang = (b/blobs)*Math.PI*2;
+      const r = 18 + rand(i*10+b)*34;
+      const px = cx + Math.cos(ang)*r, py = cy + Math.sin(ang)*r*0.7;
+      if(b===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // polar ice caps
+  const iceGradTop = ctx.createLinearGradient(0,0,0,34);
+  iceGradTop.addColorStop(0, 'rgba(255,255,255,0.95)');
+  iceGradTop.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = iceGradTop;
+  ctx.fillRect(0,0,512,34);
+  const iceGradBot = ctx.createLinearGradient(0,222,0,256);
+  iceGradBot.addColorStop(0, 'rgba(255,255,255,0)');
+  iceGradBot.addColorStop(1, 'rgba(255,255,255,0.95)');
+  ctx.fillStyle = iceGradBot;
+  ctx.fillRect(0,222,512,34);
+
+  // craters / texture speckle
+  for(let i=0;i<70;i++){
+    const x = rand(i+100)*512, y = rand(i+200)*256, r = 1.5 + rand(i+300)*3;
+    ctx.fillStyle = `rgba(0,0,0,${0.06+rand(i+400)*0.1})`;
+    ctx.beginPath();
+    ctx.ellipse(x,y,r,r*0.6,0,0,Math.PI*2);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.encoding = THREE.sRGBEncoding;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+// atmosphere rim-glow shader — the classic view-dependent "limb glow" look
+const atmosphereVert = `
+  varying vec3 vNormal;
+  void main(){
+    vNormal = normalize( normalMatrix * normal );
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+  }
+`;
+const atmosphereFrag = `
+  varying vec3 vNormal;
+  uniform vec3 glowColor;
+  void main(){
+    float intensity = pow( 0.65 - dot( vNormal, vec3(0.0, 0.0, 1.0) ), 3.2 );
+    gl_FragColor = vec4( glowColor, 1.0 ) * intensity;
+  }
+`;
+
+function buildRingTexture(hex){
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 8;
+  const ctx = c.getContext('2d');
+  const col = new THREE.Color(hex);
+  for(let x=0;x<128;x++){
+    const a = (Math.sin(x*0.4) * 0.15 + 0.35) * (0.5 + Math.random()*0.5);
+    ctx.fillStyle = `rgba(${(col.r*255)|0},${(col.g*255)|0},${(col.b*255)|0},${a.toFixed(2)})`;
+    ctx.fillRect(x,0,1,8);
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+const orbGroup = new THREE.Group();
+scene.add(orbGroup);
+
+const orbs = TOOLS.map((tool, i)=>{
+  const radius = 4.4 + (i%3)*1.1;
+  const speed = 0.15 + Math.random()*0.1;
+  const angleOffset = (i / TOOLS.length) * Math.PI * 2;
+  const yTilt = (Math.random()-0.5) * 2.2;
+  const color = colorMap[tool.accent] || 0x8b6bff;
+  const isGasGiant = i % 2 === 0;
+
+  const planetTex = isGasGiant ? buildGasGiantTexture(color, i+1) : buildRockyTexture(color, i+1);
+  const geo = new THREE.SphereGeometry(0.62, 48, 48);
+  const mat = new THREE.MeshStandardMaterial({
+    map: planetTex,
+    color: 0xffffff,
+    roughness: isGasGiant ? 0.9 : 0.75,
+    metalness: 0.03,
+    emissive: color,
+    emissiveIntensity: 0.05
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.z = (Math.random()-0.5) * 0.6; // axial tilt
+
+  // atmosphere glow shell — gives the limb a soft realistic halo
+  const atmoGeo = new THREE.SphereGeometry(0.7, 32, 32);
+  const atmoMat = new THREE.ShaderMaterial({
+    vertexShader: atmosphereVert,
+    fragmentShader: atmosphereFrag,
+    uniforms: { glowColor: { value: new THREE.Color(color) } },
+    blending: THREE.AdditiveBlending,
+    side: THREE.BackSide,
+    transparent: true,
+    depthWrite: false
+  });
+  const atmosphere = new THREE.Mesh(atmoGeo, atmoMat);
+  mesh.add(atmosphere);
+
+  const glowMat = new THREE.SpriteMaterial({
+    map: glowTexture, color, transparent:true, opacity:0.3,
+    blending: THREE.AdditiveBlending, depthWrite:false
+  });
+  const glow = new THREE.Sprite(glowMat);
+  glow.scale.set(2.0,2.0,1);
+  mesh.add(glow);
+
+  // a couple of the planets get a ring, Saturn-style
+  let ring = null;
+  if(i === 1 || i === 4){
+    const ringGeo = new THREE.RingGeometry(0.95, 1.5, 64);
+    const ringTex = buildRingTexture(color);
+    const ringMat = new THREE.MeshBasicMaterial({
+      map: ringTex, color: 0xffffff, transparent:true, opacity:0.7,
+      side: THREE.DoubleSide, depthWrite:false
+    });
+    ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI/2 - 0.35;
+    ring.rotation.y = 0.15;
+    mesh.add(ring);
+  }
+
+  orbGroup.add(mesh);
+  return {
+    mesh, glow, tool, radius, speed, angleOffset, yTilt, index: i,
+    spinVel: new THREE.Vector2(0.004 + Math.random()*0.004, 0)
+  };
+});
+
+function getOrbitPosition(o, t){
+  const angle = t * o.speed + o.angleOffset;
+  return new THREE.Vector3(
+    Math.cos(angle) * o.radius,
+    Math.sin(t*0.4 + o.index) * 0.6 + o.yTilt,
+    Math.sin(angle) * o.radius
+  );
+}
+
+// labels DOM
+const labelEls = orbs.map(o=>{
+  const el = document.createElement('div');
+  el.className = 'orb-label';
+  el.textContent = o.tool.title;
+  labelLayer.appendChild(el);
+  return el;
+});
+
+// ---- pointer interaction: drag/flick to SPIN a planet in place (no navigation) ----
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let parallaxX = 0, parallaxY = 0;
+let pointerDownOrb = null;
+let lastPX = 0, lastPY = 0;
+let hoveredOrb = null;
+const _tmpVec3 = new THREE.Vector3();
+
+function updateMouse(clientX, clientY){
+  const rect = wrap.getBoundingClientRect();
+  mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+function hitTest(){
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(orbs.map(o=>o.mesh));
+  if(!intersects.length) return null;
+  return orbs.find(o => o.mesh === intersects[0].object);
+}
+
+canvas.addEventListener('pointerdown', (e)=>{
+  updateMouse(e.clientX, e.clientY);
+  const hit = hitTest();
+  if(hit){
+    pointerDownOrb = hit;
+    lastPX = e.clientX; lastPY = e.clientY;
+    canvas.classList.add('grabbing');
+    canvas.setPointerCapture(e.pointerId);
+  }
+});
+
+canvas.addEventListener('pointermove', (e)=>{
+  updateMouse(e.clientX, e.clientY);
+
+  if(pointerDownOrb){
+    const dx = e.clientX - lastPX;
+    const dy = e.clientY - lastPY;
+    // spin the planet proportionally to drag motion — never repositions it
+    pointerDownOrb.spinVel.x += dx * 0.0009;
+    pointerDownOrb.spinVel.y += dy * 0.0009;
+    lastPX = e.clientX; lastPY = e.clientY;
+  } else {
+    parallaxX = mouse.x;
+    parallaxY = mouse.y;
+    hoveredOrb = hitTest();
+    canvas.style.cursor = hoveredOrb ? 'grab' : 'default';
+  }
+});
+
+function endPointer(){
+  if(pointerDownOrb){
+    // a quick tap with no real drag still gives it a little spin flick, just for fun
+    pointerDownOrb.spinVel.x += (Math.random()-0.5) * 0.01;
+  }
+  pointerDownOrb = null;
+  canvas.classList.remove('grabbing');
+}
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+
+const clock = new THREE.Clock();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  const delta = Math.min(clock.getDelta(), 0.05);
+  const dt60 = delta * 60; // normalize per-frame constants to a 60fps baseline
+
+  orbGroup.rotation.y = t * 0.05;
+
+  orbs.forEach((o)=>{
+    o.mesh.position.copy(getOrbitPosition(o, t));
+
+    // spin: idle rotation plus any drag-induced velocity, with damping (inertia)
+    o.mesh.rotation.y += (o.spinVel.x + 0.0025) * dt60;
+    o.mesh.rotation.x += o.spinVel.y * 0.6 * dt60;
+    const damping = Math.pow(0.96, dt60);
+    o.spinVel.x *= damping;
+    o.spinVel.y *= damping;
+
+    const isHover = (o === pointerDownOrb) || (o === hoveredOrb);
+    const targetScale = isHover ? 1.28 : 1;
+    const lerpAmt = 1 - Math.pow(1 - 0.15, dt60);
+    o.mesh.scale.lerp(_tmpVec3.set(targetScale,targetScale,targetScale), lerpAmt);
+    o.glow.material.opacity += ((isHover ? 0.6 : 0.3) - o.glow.material.opacity) * lerpAmt;
+  });
+
+  // label positions (cheap projection, no raycasting here)
+  orbs.forEach((o, i)=>{
+    const vector = o.mesh.getWorldPosition(_tmpVec3).project(camera);
+    const x = (vector.x * 0.5 + 0.5) * wrap.clientWidth;
+    const y = (-vector.y * 0.5 + 0.5) * wrap.clientHeight;
+    const el = labelEls[i];
+    el.style.left = x + 'px';
+    el.style.top = (y - 42) + 'px';
+    const isHover = (o === pointerDownOrb) || (o === hoveredOrb);
+    if(isHover && vector.z < 1){ el.classList.add('visible'); } else { el.classList.remove('visible'); }
+  });
+
+  if(!pointerDownOrb){
+    const camLerp = 1 - Math.pow(1 - 0.03, dt60);
+    camera.position.x += (parallaxX * 1.2 - camera.position.x) * camLerp;
+    camera.position.y += (parallaxY * 0.8 - camera.position.y) * camLerp;
+  }
+  camera.lookAt(0,0,0);
+
+  stars.rotation.y = t * 0.005;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = wrap.clientWidth / wrap.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+});
+</script>
+</body>
+</html>

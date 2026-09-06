@@ -1,173 +1,218 @@
-(function () {
-  const DATA = window.SITE_DATA;
-  const tabsEl = document.getElementById('tabs');
-  const mainEl = document.getElementById('main');
+const data = window.SITE_DATA;
+const tabs = document.getElementById('tabs');
+const main = document.getElementById('main');
+let currentSection = Object.keys(data.sections)[0];
 
-  document.getElementById('site-title').textContent = DATA.title;
-  document.getElementById('site-tagline').textContent = DATA.tagline;
+// Theme & Admin Logic
+const themeBtn = document.getElementById('theme-toggle');
+const loginBtn = document.getElementById('admin-login');
+const logoutBtn = document.getElementById('admin-logout');
+let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
 
-  const sectionKeys = Object.keys(DATA.sections);
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark-mode');
+}
 
-  function formatDate(iso) {
-    if (!iso) return '';
-    const d = new Date(iso + 'T00:00:00');
-    if (isNaN(d)) return iso;
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+themeBtn.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+  localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+});
+
+function updateAdminUI() {
+  if (isAdmin) {
+    document.body.classList.add('is-admin');
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+  } else {
+    document.body.classList.remove('is-admin');
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
   }
+  render();
+}
 
-  function renderCard(entry) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    const title = document.createElement('h3');
-    title.textContent = entry.title;
-    card.appendChild(title);
-
-    if (entry.body) {
-      const body = document.createElement('p');
-      body.textContent = entry.body;
-      card.appendChild(body);
-    }
-
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    const dateSpan = document.createElement('span');
-    dateSpan.textContent = formatDate(entry.date);
-    meta.appendChild(dateSpan);
-
-    if (entry.link) {
-      const link = document.createElement('a');
-      link.className = 'card-link';
-      link.href = entry.link;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.textContent = 'View →';
-      meta.appendChild(link);
-    }
-    card.appendChild(meta);
-    return card;
+loginBtn.addEventListener('click', () => {
+  const pwd = prompt("Enter Admin Password:");
+  if (pwd === "PRANAVRODENT@123") {
+    isAdmin = true;
+    sessionStorage.setItem('isAdmin', 'true');
+    updateAdminUI();
+  } else {
+    alert("Incorrect Password!");
   }
+});
 
-  function renderSection(key, sec, index) {
-    const section = document.createElement('section');
-    section.className = 'section' + (index === 0 ? ' active' : '');
-    section.dataset.section = key;
+logoutBtn.addEventListener('click', () => {
+  isAdmin = false;
+  sessionStorage.removeItem('isAdmin');
+  updateAdminUI();
+});
 
-    const head = document.createElement('div');
-    head.className = 'section-head';
-    const headText = document.createElement('div');
-    const h2 = document.createElement('h2');
-    h2.textContent = sec.label;
-    const desc = document.createElement('p');
-    desc.textContent = sec.description || '';
-    headText.appendChild(h2);
-    headText.appendChild(desc);
-    head.appendChild(headText);
-
-    const addBtn = document.createElement('button');
-    addBtn.className = 'btn-add';
-    addBtn.textContent = sec.addButtonText || '+ Add entry';
-    addBtn.addEventListener('click', () => openModal(key, sec));
-    head.appendChild(addBtn);
-
-    section.appendChild(head);
-
-    if (sec.kindnessNote) {
-      const note = document.createElement('p');
-      note.className = 'kindness-note';
-      note.textContent = sec.kindnessNote;
-      section.appendChild(note);
-    }
-
-    const grid = document.createElement('div');
-    grid.className = 'grid';
-
-    if (!sec.entries || sec.entries.length === 0) {
-      const empty = document.createElement('p');
-      empty.className = 'empty-state';
-      empty.textContent = 'Nothing here yet.';
-      section.appendChild(empty);
-    } else {
-      sec.entries
-        .slice()
-        .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-        .forEach(entry => grid.appendChild(renderCard(entry)));
-      section.appendChild(grid);
-    }
-
-    mainEl.appendChild(section);
-  }
-
-  function renderTab(key, sec, index) {
+function render() {
+  // Tabs
+  tabs.innerHTML = '';
+  Object.entries(data.sections).forEach(([key, sec]) => {
     const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (index === 0 ? ' active' : '');
-    btn.dataset.section = key;
+    btn.className = `tab ${key === currentSection ? 'active' : ''}`;
     btn.textContent = sec.label;
-    btn.addEventListener('click', () => switchTo(key));
-    tabsEl.appendChild(btn);
-  }
-
-  function switchTo(key) {
-    document.querySelectorAll('.tab-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.section === key);
+    btn.dataset.target = key;
+    btn.addEventListener('click', () => {
+      currentSection = key;
+      render();
     });
-    document.querySelectorAll('.section').forEach(s => {
-      s.classList.toggle('active', s.dataset.section === key);
-    });
-  }
-
-  sectionKeys.forEach((key, i) => {
-    renderTab(key, DATA.sections[key], i);
-    renderSection(key, DATA.sections[key], i);
+    tabs.appendChild(btn);
   });
 
-  // ---------- Add-entry modal ----------
-  const backdrop = document.getElementById('modal-backdrop');
-  const modalTitle = document.getElementById('modal-title');
-  const modalHint = document.getElementById('modal-hint');
-  const form = document.getElementById('entry-form');
-  const output = document.getElementById('modal-output');
+  // Main content
+  main.innerHTML = '';
+  const sec = data.sections[currentSection];
+  const sectionEl = document.createElement('section');
+  sectionEl.className = 'feed-section active';
+  sectionEl.id = `sec-${currentSection}`;
+
+  const header = document.createElement('div');
+  header.className = 'section-header';
+  
+  let headerHtml = `
+    <h2>${sec.label}</h2>
+    <p>${sec.description}</p>
+    ${sec.kindnessNote ? `<p class="kindness-note">${sec.kindnessNote}</p>` : ''}
+  `;
+  if (isAdmin) {
+    headerHtml += `<button class="btn-primary add-btn" data-sec="${currentSection}">${sec.addButtonText}</button>`;
+  }
+  header.innerHTML = headerHtml;
+  sectionEl.appendChild(header);
+
+  const entriesDiv = document.createElement('div');
+  entriesDiv.className = 'entries';
+
+  if (!sec.entries || sec.entries.length === 0) {
+    entriesDiv.innerHTML = '<p style="opacity:0.5; font-style:italic;">Nothing here yet...</p>';
+  } else {
+    sec.entries.forEach((entry, index) => {
+      const entryEl = document.createElement('div');
+      entryEl.className = 'entry';
+      
+      let mediaHtml = '';
+      if (entry.media) {
+        if (entry.media.startsWith('data:video')) {
+          mediaHtml = `<video controls class="entry-media" src="${entry.media}"></video>`;
+        } else {
+          mediaHtml = `<img class="entry-media" src="${entry.media}">`;
+        }
+      }
+
+      entryEl.innerHTML = `
+        <div class="entry-meta">${entry.date}</div>
+        <h3 class="entry-title">${entry.title}</h3>
+        <p class="entry-body">${entry.body}</p>
+        ${entry.link ? `<a href="${entry.link}" target="_blank" class="entry-link">View Link &rarr;</a>` : ''}
+        ${mediaHtml}
+        <div class="admin-actions admin-only">
+          <button class="btn-small edit-btn" data-index="${index}">Edit</button>
+          <button class="btn-small del-btn" data-index="${index}">Delete</button>
+        </div>
+      `;
+      entriesDiv.appendChild(entryEl);
+    });
+  }
+
+  sectionEl.appendChild(entriesDiv);
+  main.appendChild(sectionEl);
+
+  // Bind Admin Buttons
+  if (isAdmin) {
+    const addBtn = sectionEl.querySelector('.add-btn');
+    if (addBtn) addBtn.addEventListener('click', () => openModal());
+
+    sectionEl.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (confirm("Delete this entry?")) {
+          const idx = e.target.dataset.index;
+          data.sections[currentSection].entries.splice(idx, 1);
+          generateFullDataCode();
+        }
+      });
+    });
+
+    sectionEl.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = e.target.dataset.index;
+        openModal(idx);
+      });
+    });
+  }
+}
+
+// Modal Logic
+const modal = document.getElementById('modal-backdrop');
+const closeBtn = document.getElementById('modal-close');
+const form = document.getElementById('entry-form');
+let editingIndex = null;
+let base64Media = null;
+
+function openModal(index = null) {
+  editingIndex = index;
+  base64Media = null;
+  form.reset();
+  
+  if (index !== null) {
+    const entry = data.sections[currentSection].entries[index];
+    document.getElementById('f-title').value = entry.title;
+    document.getElementById('f-body').value = entry.body;
+    document.getElementById('f-link').value = entry.link || '';
+    base64Media = entry.media || null;
+  }
+  
+  document.getElementById('modal-output').hidden = true;
+  modal.style.display = 'flex';
+}
+
+closeBtn.addEventListener('click', () => modal.style.display = 'none');
+
+document.getElementById('f-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => base64Media = ev.target.result;
+  reader.readAsDataURL(file);
+});
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const newEntry = {
+    title: document.getElementById('f-title').value,
+    body: document.getElementById('f-body').value,
+    link: document.getElementById('f-link').value,
+    date: new Date().toISOString().split('T')[0],
+    media: base64Media
+  };
+
+  if (editingIndex !== null) {
+    data.sections[currentSection].entries[editingIndex] = newEntry;
+  } else {
+    data.sections[currentSection].entries.unshift(newEntry);
+  }
+
+  generateFullDataCode();
+});
+
+function generateFullDataCode() {
+  const codeStr = `window.SITE_DATA = ${JSON.stringify(data, null, 2)};`;
   const codeBox = document.getElementById('modal-code');
-  let currentKey = null;
+  codeBox.value = codeStr;
+  document.getElementById('modal-output').hidden = false;
+  render();
+}
 
-  function openModal(key, sec) {
-    currentKey = key;
-    modalTitle.textContent = 'Add to ' + sec.label;
-    modalHint.textContent = 'Fill this in, then paste the generated code into data.js.';
-    form.reset();
-    output.hidden = true;
-    backdrop.classList.add('open');
-  }
+document.getElementById('copy-code').addEventListener('click', () => {
+  const codeBox = document.getElementById('modal-code');
+  codeBox.select();
+  document.execCommand('copy');
+  alert("Copied! Now open data.js, paste over everything, and push to GitHub!");
+});
 
-  function closeModal() {
-    backdrop.classList.remove('open');
-  }
-
-  document.getElementById('modal-close').addEventListener('click', closeModal);
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) closeModal();
-  });
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const title = document.getElementById('f-title').value.trim();
-    const body = document.getElementById('f-body').value.trim();
-    const link = document.getElementById('f-link').value.trim();
-    const today = new Date().toISOString().slice(0, 10);
-
-    const snippet =
-`{
-  title: ${JSON.stringify(title)},
-  body: ${JSON.stringify(body)},
-  link: ${JSON.stringify(link)},
-  date: ${JSON.stringify(today)}
-},`;
-
-    codeBox.value = snippet;
-    output.hidden = false;
-  });
-
-  document.getElementById('copy-code').addEventListener('click', () => {
-    codeBox.select();
-    document.execCommand('copy');
-  });
-})();
+// Init
+updateAdminUI();
