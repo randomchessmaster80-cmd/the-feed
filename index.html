@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Feed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <h1 id="site-title">THE FEED</h1>
+    <p id="site-tagline">everything that happened, in one place</p>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <!-- tabs injected by app.js -->
+</nav>
+
+<main id="main">
+  <!-- sections injected by app.js -->
+</main>
+
+<footer class="site-footer">
+  <p>made by hand · edit <code>data.js</code> to add stuff · hosted on GitHub Pages</p>
+</footer>
+
+<!-- Add-entry modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+    <h2 id="modal-title">Add to Vault</h2>
+    <p class="modal-hint" id="modal-hint"></p>
+    <form id="entry-form">
+      <label>Title
+        <input type="text" id="f-title" required maxlength="80">
+      </label>
+      <label>Details
+        <textarea id="f-body" rows="3" maxlength="400"></textarea>
+      </label>
+      <label>Link (optional — video, image, post)
+        <input type="url" id="f-link" placeholder="https://...">
+      </label>
+      <button type="submit" class="btn-primary">Generate entry code</button>
+    </form>
+    <div class="modal-output" id="modal-output" hidden>
+      <p class="modal-hint">This browser can't save to the live site by itself — copy this into <code>data.js</code> and push it to GitHub so everyone sees it:</p>
+      <textarea id="modal-code" readonly rows="8"></textarea>
+      <button class="btn-secondary" id="copy-code">Copy</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
