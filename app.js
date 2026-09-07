@@ -1,9 +1,13 @@
+const SUPABASE_URL = 'https://dexwsauticoyhrzyazti.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRleHdzYXV0aWNveWhyenlhenRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MTI5MjQsImV4cCI6MjEwNDI4ODkyNH0.xMxPgOsPlnOPk9f3l91eZa61R2BtdfdXlT6Kbfi-1Tg';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const data = window.SITE_DATA;
 const tabs = document.getElementById('tabs');
 const main = document.getElementById('main');
 let currentSection = Object.keys(data.sections)[0];
+let dbEntries = [];
 
-// Theme & Admin Logic
 const themeBtn = document.getElementById('theme-toggle');
 const loginBtn = document.getElementById('admin-login');
 const logoutBtn = document.getElementById('admin-logout');
@@ -12,7 +16,6 @@ let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
 if (localStorage.getItem('theme') === 'dark') {
   document.body.classList.add('dark-mode');
 }
-
 themeBtn.addEventListener('click', () => {
   document.body.classList.toggle('dark-mode');
   localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
@@ -41,21 +44,29 @@ loginBtn.addEventListener('click', () => {
     alert("Incorrect Password!");
   }
 });
-
 logoutBtn.addEventListener('click', () => {
   isAdmin = false;
   sessionStorage.removeItem('isAdmin');
   updateAdminUI();
 });
 
+async function fetchEntries() {
+  const { data: entries, error } = await supabase
+    .from('entries')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (!error) {
+    dbEntries = entries;
+  }
+  render();
+}
+
 function render() {
-  // Tabs
   tabs.innerHTML = '';
   Object.entries(data.sections).forEach(([key, sec]) => {
     const btn = document.createElement('button');
     btn.className = `tab ${key === currentSection ? 'active' : ''}`;
     btn.textContent = sec.label;
-    btn.dataset.target = key;
     btn.addEventListener('click', () => {
       currentSection = key;
       render();
@@ -63,156 +74,146 @@ function render() {
     tabs.appendChild(btn);
   });
 
-  // Main content
   main.innerHTML = '';
   const sec = data.sections[currentSection];
   const sectionEl = document.createElement('section');
   sectionEl.className = 'feed-section active';
-  sectionEl.id = `sec-${currentSection}`;
 
-  const header = document.createElement('div');
-  header.className = 'section-header';
-  
   let headerHtml = `
-    <h2>${sec.label}</h2>
-    <p>${sec.description}</p>
-    ${sec.kindnessNote ? `<p class="kindness-note">${sec.kindnessNote}</p>` : ''}
+    <div class="section-header">
+      <h2>${sec.label}</h2>
+      <p>${sec.description}</p>
+      ${sec.kindnessNote ? `<p class="kindness-note">${sec.kindnessNote}</p>` : ''}
+      ${isAdmin ? `<button class="btn-primary add-btn">+ Add Entry</button>` : ''}
+    </div>
+    <div class="entries">
   `;
-  if (isAdmin) {
-    headerHtml += `<button class="btn-primary add-btn" data-sec="${currentSection}">${sec.addButtonText}</button>`;
-  }
-  header.innerHTML = headerHtml;
-  sectionEl.appendChild(header);
 
-  const entriesDiv = document.createElement('div');
-  entriesDiv.className = 'entries';
-
-  if (!sec.entries || sec.entries.length === 0) {
-    entriesDiv.innerHTML = '<p style="opacity:0.5; font-style:italic;">Nothing here yet...</p>';
+  const sectionEntries = dbEntries.filter(e => e.section === currentSection);
+  if (sectionEntries.length === 0) {
+    headerHtml += '<p style="opacity:0.5; font-style:italic;">Nothing here yet...</p>';
   } else {
-    sec.entries.forEach((entry, index) => {
-      const entryEl = document.createElement('div');
-      entryEl.className = 'entry';
-      
+    sectionEntries.forEach(entry => {
       let mediaHtml = '';
-      if (entry.media) {
-        if (entry.media.startsWith('data:video')) {
-          mediaHtml = `<video controls class="entry-media" src="${entry.media}"></video>`;
+      if (entry.media_url) {
+        if (entry.media_url.endsWith('.mp4')) {
+          mediaHtml = `<video controls class="entry-media" src="${entry.media_url}"></video>`;
         } else {
-          mediaHtml = `<img class="entry-media" src="${entry.media}">`;
+          mediaHtml = `<img class="entry-media" src="${entry.media_url}">`;
         }
       }
+      
+      const dateStr = new Date(entry.created_at).toISOString().split('T')[0];
 
-      entryEl.innerHTML = `
-        <div class="entry-meta">${entry.date}</div>
-        <h3 class="entry-title">${entry.title}</h3>
-        <p class="entry-body">${entry.body}</p>
-        ${entry.link ? `<a href="${entry.link}" target="_blank" class="entry-link">View Link &rarr;</a>` : ''}
-        ${mediaHtml}
-        <div class="admin-actions admin-only">
-          <button class="btn-small edit-btn" data-index="${index}">Edit</button>
-          <button class="btn-small del-btn" data-index="${index}">Delete</button>
+      headerHtml += `
+        <div class="entry">
+          <div class="entry-meta">${dateStr}</div>
+          <h3 class="entry-title">${entry.title}</h3>
+          <p class="entry-body">${entry.body}</p>
+          ${entry.link ? `<a href="${entry.link}" target="_blank" class="entry-link">View Link &rarr;</a>` : ''}
+          ${mediaHtml}
+          ${isAdmin ? `
+            <div class="admin-actions admin-only">
+              <button class="btn-small edit-btn" data-id="${entry.id}">Edit</button>
+              <button class="btn-small del-btn" data-id="${entry.id}">Delete</button>
+            </div>
+          ` : ''}
         </div>
       `;
-      entriesDiv.appendChild(entryEl);
     });
   }
-
-  sectionEl.appendChild(entriesDiv);
+  headerHtml += `</div>`;
+  sectionEl.innerHTML = headerHtml;
   main.appendChild(sectionEl);
 
-  // Bind Admin Buttons
   if (isAdmin) {
     const addBtn = sectionEl.querySelector('.add-btn');
     if (addBtn) addBtn.addEventListener('click', () => openModal());
 
     sectionEl.querySelectorAll('.del-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        if (confirm("Delete this entry?")) {
-          const idx = e.target.dataset.index;
-          data.sections[currentSection].entries.splice(idx, 1);
-          generateFullDataCode();
+      btn.addEventListener('click', async (e) => {
+        if (confirm("Delete this entry forever?")) {
+          const id = e.target.dataset.id;
+          await supabase.from('entries').delete().eq('id', id);
+          fetchEntries();
         }
       });
     });
 
     sectionEl.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const idx = e.target.dataset.index;
-        openModal(idx);
+        const id = e.target.dataset.id;
+        openModal(id);
       });
     });
   }
 }
 
-// Modal Logic
 const modal = document.getElementById('modal-backdrop');
 const closeBtn = document.getElementById('modal-close');
 const form = document.getElementById('entry-form');
-let editingIndex = null;
-let base64Media = null;
+let editingId = null;
 
-function openModal(index = null) {
-  editingIndex = index;
-  base64Media = null;
+function openModal(id = null) {
+  editingId = id;
   form.reset();
+  document.querySelector('#entry-form button').textContent = id ? "Save Changes" : "Post to Live Site";
+  document.getElementById('modal-output').hidden = true;
   
-  if (index !== null) {
-    const entry = data.sections[currentSection].entries[index];
+  if (id) {
+    const entry = dbEntries.find(e => e.id === id);
     document.getElementById('f-title').value = entry.title;
     document.getElementById('f-body').value = entry.body;
     document.getElementById('f-link').value = entry.link || '';
-    base64Media = entry.media || null;
   }
   
-  document.getElementById('modal-output').hidden = true;
   modal.style.display = 'flex';
 }
-
 closeBtn.addEventListener('click', () => modal.style.display = 'none');
 
-document.getElementById('f-file').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => base64Media = ev.target.result;
-  reader.readAsDataURL(file);
-});
-
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const fileInput = document.getElementById('f-file');
+  const file = fileInput.files[0];
+  let mediaUrl = null;
   
-  const newEntry = {
+  document.querySelector('#entry-form button').textContent = "Uploading... Please wait.";
+  document.querySelector('#entry-form button').disabled = true;
+
+  if (file) {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const { data, error } = await supabase.storage.from('media').upload(fileName, file);
+    if (data) {
+      const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(fileName);
+      mediaUrl = publicUrlData.publicUrl;
+    }
+  } else if (editingId) {
+    const entry = dbEntries.find(e => e.id === editingId);
+    mediaUrl = entry.media_url;
+  }
+
+  const payload = {
+    section: currentSection,
     title: document.getElementById('f-title').value,
     body: document.getElementById('f-body').value,
     link: document.getElementById('f-link').value,
-    date: new Date().toISOString().split('T')[0],
-    media: base64Media
   };
+  if (mediaUrl) payload.media_url = mediaUrl;
 
-  if (editingIndex !== null) {
-    data.sections[currentSection].entries[editingIndex] = newEntry;
+  if (editingId) {
+    await supabase.from('entries').update(payload).eq('id', editingId);
   } else {
-    data.sections[currentSection].entries.unshift(newEntry);
+    await supabase.from('entries').insert([payload]);
   }
 
-  generateFullDataCode();
+  document.querySelector('#entry-form button').disabled = false;
+  modal.style.display = 'none';
+  fetchEntries();
 });
 
-function generateFullDataCode() {
-  const codeStr = `window.SITE_DATA = ${JSON.stringify(data, null, 2)};`;
-  const codeBox = document.getElementById('modal-code');
-  codeBox.value = codeStr;
-  document.getElementById('modal-output').hidden = false;
-  render();
-}
+// Hide the old copy/paste output area since it's fully automated now
+document.getElementById('modal-output').style.display = 'none';
 
-document.getElementById('copy-code').addEventListener('click', () => {
-  const codeBox = document.getElementById('modal-code');
-  codeBox.select();
-  document.execCommand('copy');
-  alert("Copied! Now open data.js, paste over everything, and push to GitHub!");
-});
-
-// Init
 updateAdminUI();
+fetchEntries();
