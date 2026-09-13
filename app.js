@@ -16,15 +16,15 @@ let dbEntries = [];
 const themeBtn = document.getElementById('theme-toggle');
 const loginBtn = document.getElementById('admin-login');
 const logoutBtn = document.getElementById('admin-logout');
-let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+let isAdmin = window.safeGetItem("sessionStorage", "isAdmin") === 'true';
 
-if (localStorage.getItem('theme') === 'dark') {
+if (window.safeGetItem("localStorage", "theme') === 'dark") {
   document.body.classList.add('dark-mode');
 }
 if (themeBtn) {
   themeBtn.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
-    localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    window.safeSetItem("localStorage", "theme", document.body.classList.contains('dark-mode') ? 'dark' : 'light');
   });
 }
 
@@ -46,7 +46,7 @@ if (loginBtn) {
     const pwd = prompt("Enter Admin Password:");
     if (pwd === "PRANAVRODENT@123") {
       isAdmin = true;
-      sessionStorage.setItem('isAdmin', 'true');
+      window.safeSetItem("sessionStorage", "isAdmin", "true");
       updateAdminUI();
     } else {
       alert("Incorrect Password!");
@@ -57,7 +57,7 @@ if (loginBtn) {
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
     isAdmin = false;
-    sessionStorage.removeItem('isAdmin');
+    window.safeRemoveItem("sessionStorage", "isAdmin");
     updateAdminUI();
   });
 }
