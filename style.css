@@ -19,13 +19,13 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Lora', serif;
   font-size: 16px;
   line-height: 1.5;
 }
 
 h1, h2, h3, .tab-label {
-  font-family: 'Fredoka', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 600;
   margin: 0;
 }
@@ -59,7 +59,7 @@ h1, h2, h3, .tab-label {
   border: none;
   cursor: pointer;
   padding: 1rem 0.75rem;
-  font-family: 'Fredoka', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-size: 1rem;
   font-weight: 600;
   color: var(--paper);
@@ -100,7 +100,7 @@ h1, h2, h3, .tab-label {
 .section-head p { color: var(--ink-soft); max-width: 60ch; margin-top: 0.3rem; }
 
 .btn-add {
-  font-family: 'Fredoka', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 600;
   border: 2px solid var(--ink);
   background: var(--paper);
@@ -236,7 +236,7 @@ h1, h2, h3, .tab-label {
   gap: 0.3rem;
 }
 .modal input, .modal textarea {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Lora', serif;
   font-size: 0.95rem;
   padding: 0.55rem 0.65rem;
   border: 2px solid var(--ink);
@@ -244,7 +244,7 @@ h1, h2, h3, .tab-label {
   resize: vertical;
 }
 .btn-primary, .btn-secondary {
-  font-family: 'Fredoka', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 600;
   border: 2px solid var(--ink);
   padding: 0.6rem 1rem;
@@ -295,7 +295,7 @@ body.dark-mode {
   padding: 5px 10px;
   border-radius: 4px;
   cursor: pointer;
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Lora', serif;
 }
 
 .btn-small:hover {
