@@ -260,3 +260,9 @@ if (outputEl) outputEl.style.display = 'none';
 
 updateAdminUI();
 fetchEntries();
+if(themeBtn) {
+  themeBtn.addEventListener('click', () => { alert("Dark Mode button clicked!"); });
+}
+if(loginBtn) {
+  loginBtn.addEventListener('click', () => { alert("Admin login button clicked!"); });
+}
