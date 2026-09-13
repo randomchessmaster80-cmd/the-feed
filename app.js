@@ -22,16 +22,16 @@ let isAdmin = false;
 try { isAdmin = window.sessionStorage.getItem('isAdmin') === 'true'; } catch(e){}
 
 try {
-  if (window.localStorage.getItem('theme') === 'dark') {
-    document.body.classList.add('dark-mode');
+  if (window.localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light-mode');
   }
 } catch(e){}
 
 if (themeBtn) {
   themeBtn.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
+    document.body.classList.toggle('light-mode');
     try {
-      window.localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+      window.localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
     } catch(e){}
   });
 }
