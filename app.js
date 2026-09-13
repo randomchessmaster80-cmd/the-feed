@@ -1,3 +1,35 @@
+// 1. ATTACH BUTTONS FIRST (Safest execution)
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const themeBtn = document.getElementById('theme-toggle');
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+    
+    themeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+
+    const loginBtn = document.getElementById('admin-login');
+    const logoutBtn = document.getElementById('admin-logout');
+    
+    loginBtn.addEventListener('click', () => {
+      const pwd = prompt("Enter Admin Password:");
+      if (pwd === "PRANAVRODENT@123") {
+        sessionStorage.setItem('isAdmin', 'true');
+        window.location.reload();
+      } else {
+        alert("Incorrect Password!");
+      }
+    });
+    
+    logoutBtn.addEventListener('click', () => {
+      sessionStorage.removeItem('isAdmin');
+      window.location.reload();
+    });
+  } catch (e) {
+    console.error("Button Init Error:", e);
+  }
+});
 const SUPABASE_URL = 'https://dexwsauticoyhrzyazti.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRleHdzYXV0aWNveWhyenlhenRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MTI5MjQsImV4cCI6MjEwNDI4ODkyNH0.xMxPgOsPlnOPk9f3l91eZa61R2BtdfdXlT6Kbfi-1Tg';
 let supabase = null;
