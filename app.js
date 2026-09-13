@@ -136,7 +136,7 @@ function render() {
       <h2>${sec.label}</h2>
       <p>${sec.description}</p>
       ${sec.kindnessNote ? `<p class="kindness-note">${sec.kindnessNote}</p>` : ''}
-      ${isAdmin ? `<button class="btn-primary add-btn">+ Add Entry</button>` : ''}
+      <button class="btn-primary add-btn">+ Add Entry</button>
     </div>
     <div class="entries">
   `;
@@ -178,9 +178,10 @@ function render() {
   sectionEl.innerHTML = headerHtml;
   main.appendChild(sectionEl);
 
+  const addBtn = sectionEl.querySelector('.add-btn');
+  if (addBtn) addBtn.addEventListener('click', () => openModal());
+
   if (isAdmin) {
-    const addBtn = sectionEl.querySelector('.add-btn');
-    if (addBtn) addBtn.addEventListener('click', () => openModal());
 
     sectionEl.querySelectorAll('.del-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -219,8 +220,7 @@ function openModal(id = null) {
     if(entry) {
       document.getElementById('f-title').value = entry.title || '';
       document.getElementById('f-body').value = entry.body || '';
-      document.getElementById('f-link').value = entry.link || '';
-    }
+      }
   }
   
   if(modal) modal.style.display = 'flex';
@@ -260,8 +260,7 @@ if(form) {
         section: currentSection,
         title: document.getElementById('f-title').value,
         body: document.getElementById('f-body').value,
-        link: document.getElementById('f-link').value,
-      };
+        };
       if (mediaUrl) payload.media_url = mediaUrl;
 
       if (editingId) {
