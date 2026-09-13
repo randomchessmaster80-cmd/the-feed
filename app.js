@@ -16,15 +16,23 @@ let dbEntries = [];
 const themeBtn = document.getElementById('theme-toggle');
 const loginBtn = document.getElementById('admin-login');
 const logoutBtn = document.getElementById('admin-logout');
-let isAdmin = window.safeGetItem("sessionStorage", "isAdmin") === 'true';
 
-if (window.safeGetItem("localStorage", "theme') === 'dark") {
-  document.body.classList.add('dark-mode');
-}
+// Use polyfill if available, else standard with try/catch inside
+let isAdmin = false;
+try { isAdmin = window.sessionStorage.getItem('isAdmin') === 'true'; } catch(e){}
+
+try {
+  if (window.localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+  }
+} catch(e){}
+
 if (themeBtn) {
   themeBtn.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
-    window.safeSetItem("localStorage", "theme", document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    try {
+      window.localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    } catch(e){}
   });
 }
 
@@ -46,7 +54,7 @@ if (loginBtn) {
     const pwd = prompt("Enter Admin Password:");
     if (pwd === "PRANAVRODENT@123") {
       isAdmin = true;
-      window.safeSetItem("sessionStorage", "isAdmin", "true");
+      try { window.sessionStorage.setItem('isAdmin', 'true'); } catch(e){}
       updateAdminUI();
     } else {
       alert("Incorrect Password!");
@@ -57,7 +65,7 @@ if (loginBtn) {
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
     isAdmin = false;
-    window.safeRemoveItem("sessionStorage", "isAdmin");
+    try { window.sessionStorage.removeItem('isAdmin'); } catch(e){}
     updateAdminUI();
   });
 }
