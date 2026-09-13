@@ -1,8 +1,8 @@
 const SUPABASE_URL = 'https://dexwsauticoyhrzyazti.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRleHdzYXV0aWNveWhyenlhenRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MTI5MjQsImV4cCI6MjEwNDI4ODkyNH0.xMxPgOsPlnOPk9f3l91eZa61R2BtdfdXlT6Kbfi-1Tg';
-let supabase = null;
+let dbClient = null;
 try {
-  if (window.supabase) supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  if (window.supabase) dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 } catch (e) {
   console.error("Supabase load failed:", e);
 }
@@ -71,9 +71,9 @@ if (logoutBtn) {
 }
 
 async function fetchEntries() {
-  if (!supabase) return render();
+  if (!dbClient) return render();
   try {
-    const { data: entries, error } = await supabase
+    const { data: entries, error } = await dbClient
       .from('entries')
       .select('*')
       .order('created_at', { ascending: false });
@@ -161,7 +161,7 @@ function render() {
       btn.addEventListener('click', async (e) => {
         if (confirm("Delete this entry forever?")) {
           const id = e.target.dataset.id;
-          if(supabase) await supabase.from('entries').delete().eq('id', id);
+          if(dbClient) await dbClient.from('entries').delete().eq('id', id);
           fetchEntries();
         }
       });
@@ -205,7 +205,7 @@ if(closeBtn) closeBtn.addEventListener('click', () => modal.style.display = 'non
 if(form) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if(!supabase) {
+    if(!dbClient) {
       alert("Database is currently disconnected!");
       return;
     }
@@ -221,9 +221,9 @@ if(form) {
       if (file) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
-        const { data, error } = await supabase.storage.from('media').upload(fileName, file);
+        const { data, error } = await dbClient.storage.from('media').upload(fileName, file);
         if (data) {
-          const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(fileName);
+          const { data: publicUrlData } = dbClient.storage.from('media').getPublicUrl(fileName);
           mediaUrl = publicUrlData.publicUrl;
         }
       } else if (editingId) {
@@ -240,9 +240,9 @@ if(form) {
       if (mediaUrl) payload.media_url = mediaUrl;
 
       if (editingId) {
-        await supabase.from('entries').update(payload).eq('id', editingId);
+        await dbClient.from('entries').update(payload).eq('id', editingId);
       } else {
-        await supabase.from('entries').insert([payload]);
+        await dbClient.from('entries').insert([payload]);
       }
     } catch (e) {
       console.error(e);
