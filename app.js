@@ -1,6 +1,11 @@
 const SUPABASE_URL = 'https://dexwsauticoyhrzyazti.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRleHdzYXV0aWNveWhyenlhenRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MTI5MjQsImV4cCI6MjEwNDI4ODkyNH0.xMxPgOsPlnOPk9f3l91eZa61R2BtdfdXlT6Kbfi-1Tg';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase = null;
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+  console.error("Supabase failed to load. Adblocker or network issue:", e);
+}
 
 const data = window.SITE_DATA;
 const tabs = document.getElementById('tabs');
@@ -51,6 +56,7 @@ logoutBtn.addEventListener('click', () => {
 });
 
 async function fetchEntries() {
+  if (!supabase) return render();
   const { data: entries, error } = await supabase
     .from('entries')
     .select('*')
@@ -183,7 +189,8 @@ form.addEventListener('submit', async (e) => {
   if (file) {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
-    const { data, error } = await supabase.storage.from('media').upload(fileName, file);
+    if (!supabase) throw new Error('No Supabase');
+const { data, error } = await supabase.storage.from('media').upload(fileName, file);
     if (data) {
       const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(fileName);
       mediaUrl = publicUrlData.publicUrl;
