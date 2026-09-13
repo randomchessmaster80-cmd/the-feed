@@ -244,12 +244,21 @@ if(form) {
 
     try {
       if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const { data, error } = await dbClient.storage.from('media').upload(fileName, file);
-        if (data) {
-          const { data: publicUrlData } = dbClient.storage.from('media').getPublicUrl(fileName);
-          mediaUrl = publicUrlData.publicUrl;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', 'lxwhvnkx');
+        
+        // Send to Cloudinary instead of Supabase
+        const uploadRes = await fetch('https://api.cloudinary.com/v1_1/cojsaana/auto/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const cloudData = await uploadRes.json();
+        if (cloudData.secure_url) {
+          mediaUrl = cloudData.secure_url;
+        } else {
+          throw new Error('Cloudinary upload failed: ' + JSON.stringify(cloudData));
         }
       } else if (editingId) {
         const entry = dbEntries.find(e => e.id === editingId);

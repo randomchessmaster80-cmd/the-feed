@@ -9,8 +9,8 @@
   --glass-shine: rgba(255, 255, 255, 0.05);
   --text: #f0f0f0;
   --text-soft: #8a8a9a;
-  --accent: #7c5cfc;
-  --accent-glow: rgba(124, 92, 252, 0.3);
+  --accent: #e63946;
+  --accent-glow: rgba(230, 57, 70, 0.3);
   --vault: #f59e0b;
   --tea: #ef4444;
   --fame: #a855f7;
@@ -40,9 +40,9 @@ body::before {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(ellipse at 20% 50%, rgba(124, 92, 252, 0.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 20% 50%, rgba(230, 57, 70, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(255, 50, 50, 0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, rgba(200, 30, 30, 0.04) 0%, transparent 50%);
   z-index: -1;
   animation: bgShift 20s ease-in-out infinite alternate;
 }
@@ -104,7 +104,7 @@ h1, h2, h3 {
 .masthead-inner h1 {
   font-size: clamp(2.5rem, 7vw, 4.5rem);
   letter-spacing: 6px;
-  background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, #a855f7 100%);
+  background: linear-gradient(135deg, #fff 0%, #e63946 50%, #ff6b6b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -209,7 +209,7 @@ main {
   padding: 12px 28px;
   border-radius: 999px;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--accent), #a855f7);
+  background: linear-gradient(135deg, #e63946, #ff6b6b);
   color: #fff;
   transition: all 0.3s ease;
   margin-top: 1rem;
@@ -278,8 +278,8 @@ main {
 
 .entry:hover {
   background: var(--bg-card-hover);
-  border-color: rgba(124, 92, 252, 0.3);
-  box-shadow: 0 4px 30px rgba(124, 92, 252, 0.08);
+  border-color: rgba(230, 57, 70, 0.3);
+  box-shadow: 0 4px 30px rgba(230, 57, 70, 0.08);
   transform: translateY(-2px);
 }
 
@@ -459,13 +459,13 @@ body.light-mode {
   --glass-border: rgba(0, 0, 0, 0.1);
   --text: #1a1a2e;
   --text-soft: #6b6b7b;
-  --accent: #6c4ce0;
-  --accent-glow: rgba(108, 76, 224, 0.2);
+  --accent: #c1121f;
+  --accent-glow: rgba(193, 18, 31, 0.2);
 }
 
 body.light-mode::before {
-  background: radial-gradient(ellipse at 20% 50%, rgba(108, 76, 224, 0.06) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.04) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 20% 50%, rgba(230, 57, 70, 0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(255, 50, 50, 0.04) 0%, transparent 50%);
 }
 
 body.light-mode .top-bar {
@@ -483,7 +483,7 @@ body.light-mode .modal textarea {
 }
 
 body.light-mode .masthead-inner h1 {
-  background: linear-gradient(135deg, #1a1a2e 0%, var(--accent) 50%, #a855f7 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #c1121f 50%, #e63946 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
