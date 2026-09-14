@@ -294,3 +294,35 @@ if (outputEl) outputEl.style.display = 'none';
 updateAdminUI();
 fetchEntries();
 
+
+
+async function trackVisit() {
+  if (!dbClient) return;
+  // Use session storage so we only count 1 view per session to prevent spamming
+  if (sessionStorage.getItem('visited')) {
+    const { data } = await dbClient.from('entries').select('*').eq('section', 'system').eq('title', 'visits_tracker');
+    if (data && data.length > 0) {
+      const countEl = document.getElementById('visit-count');
+      if (countEl) countEl.innerText = parseInt(data[0].body).toLocaleString() + ' Views';
+    }
+    return;
+  }
+  
+  try {
+    const { data, error } = await dbClient.from('entries').select('*').eq('section', 'system').eq('title', 'visits_tracker');
+    let count = 1;
+    if (data && data.length > 0) {
+      count = parseInt(data[0].body) + 1;
+      await dbClient.from('entries').update({ body: count.toString() }).eq('id', data[0].id);
+    } else {
+      await dbClient.from('entries').insert([{ section: 'system', title: 'visits_tracker', body: '1' }]);
+    }
+    
+    sessionStorage.setItem('visited', 'true');
+    const countEl = document.getElementById('visit-count');
+    if (countEl) countEl.innerText = count.toLocaleString() + ' Views';
+  } catch (e) {
+    console.error("Visit tracker error:", e);
+  }
+}
+trackVisit();
