@@ -6,15 +6,16 @@
 <title>THE FEED</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
 
 <div class="top-bar">
-  <div id="visit-counter" class="visit-counter">👁️ <span id="visit-count">...</span></div>
+  <div id="visit-counter" class="visit-counter admin-only" style="display:none;">👁️ <span id="visit-count">...</span></div>
   <button id="theme-toggle" class="btn-small">🌓 Toggle Theme</button>
   <button id="admin-login" class="btn-small">🔒 Admin Login</button>
+  <button id="admin-stats" class="btn-small admin-only" style="display:none;">📊 Dashboard</button>
   <button id="admin-logout" class="btn-small" style="display:none;">🔓 Logout</button>
 </div>
 <header class="masthead">
@@ -61,6 +62,18 @@
 </div>
 
 
+
+<!-- Stats Modal -->
+<div class="modal-backdrop" id="stats-modal-backdrop" style="display: none;">
+  <div class="modal" style="max-width: 400px;">
+    <button class="modal-close" id="stats-modal-close" aria-label="Close">&times;</button>
+    <h2>Admin Dashboard</h2>
+    <div id="stats-content" style="margin-top: 15px;">
+      <p style="color: var(--text-soft);">Loading stats...</p>
+    </div>
+  </div>
+</div>
+
 <!-- Admin Login Modal -->
 <div class="modal-backdrop" id="login-modal-backdrop" style="display: none;">
   <div class="modal" style="max-width: 300px;">
@@ -80,6 +93,6 @@
 
 <script src="data.js"></script>
 
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

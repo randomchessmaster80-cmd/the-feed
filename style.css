@@ -8,7 +8,7 @@
   --glass-border: rgba(255, 255, 255, 0.15);
   --glass-shine: rgba(255, 255, 255, 0.05);
   --text: #f0f0f0;
-  --text-soft: #8a8a9a;
+  --text-soft: #c4c4cc;
   --accent: #e63946;
   --accent-glow: rgba(230, 57, 70, 0.3);
   --vault: #f59e0b;
@@ -458,7 +458,7 @@ body.light-mode {
   --glass: rgba(0, 0, 0, 0.04);
   --glass-border: rgba(0, 0, 0, 0.1);
   --text: #1a1a2e;
-  --text-soft: #6b6b7b;
+  --text-soft: #4a4a5a;
   --accent: #c1121f;
   --accent-glow: rgba(193, 18, 31, 0.2);
 }
@@ -522,3 +522,14 @@ body.light-mode .masthead-inner h1 {
   gap: 6px;
   box-shadow: inset 0 1px 0 var(--glass-shine), 0 0 15px var(--accent-glow);
 }
+
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text);
+}
+.stats-row:last-child { border-bottom: none; }
+.stats-label { font-weight: bold; color: var(--accent); }

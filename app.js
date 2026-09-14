@@ -37,14 +37,20 @@ if (themeBtn) {
 }
 
 function updateAdminUI() {
+  const visitCounter = document.getElementById('visit-counter');
+  const statsBtn = document.getElementById('admin-stats');
   if (isAdmin) {
     document.body.classList.add('is-admin');
     if (loginBtn) loginBtn.style.display = 'none';
     if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    if (statsBtn) statsBtn.style.display = 'inline-block';
+    if (visitCounter) visitCounter.style.display = 'flex';
   } else {
     document.body.classList.remove('is-admin');
     if (loginBtn) loginBtn.style.display = 'inline-block';
     if (logoutBtn) logoutBtn.style.display = 'none';
+    if (statsBtn) statsBtn.style.display = 'none';
+    if (visitCounter) visitCounter.style.display = 'none';
   }
   render();
 }
@@ -296,33 +302,92 @@ fetchEntries();
 
 
 
+
 async function trackVisit() {
   if (!dbClient) return;
-  // Use session storage so we only count 1 view per session to prevent spamming
+  const today = new Date().toISOString().split('T')[0];
+  const dailyKey = 'visits_' + today;
+  
   if (sessionStorage.getItem('visited')) {
     const { data } = await dbClient.from('entries').select('*').eq('section', 'system').eq('title', 'visits_tracker');
     if (data && data.length > 0) {
       const countEl = document.getElementById('visit-count');
-      if (countEl) countEl.innerText = parseInt(data[0].body).toLocaleString() + ' Views';
+      if (countEl) countEl.innerText = parseInt(data[0].body).toLocaleString() + ' Total Views';
     }
     return;
   }
   
   try {
-    const { data, error } = await dbClient.from('entries').select('*').eq('section', 'system').eq('title', 'visits_tracker');
-    let count = 1;
-    if (data && data.length > 0) {
-      count = parseInt(data[0].body) + 1;
-      await dbClient.from('entries').update({ body: count.toString() }).eq('id', data[0].id);
+    // 1. Update Total
+    const { data: totalData } = await dbClient.from('entries').select('*').eq('section', 'system').eq('title', 'visits_tracker');
+    let totalCount = 1;
+    if (totalData && totalData.length > 0) {
+      totalCount = parseInt(totalData[0].body) + 1;
+      await dbClient.from('entries').update({ body: totalCount.toString() }).eq('id', totalData[0].id);
     } else {
       await dbClient.from('entries').insert([{ section: 'system', title: 'visits_tracker', body: '1' }]);
     }
     
+    // 2. Update Daily
+    const { data: dailyData } = await dbClient.from('entries').select('*').eq('section', 'system').eq('title', dailyKey);
+    if (dailyData && dailyData.length > 0) {
+      let dailyCount = parseInt(dailyData[0].body) + 1;
+      await dbClient.from('entries').update({ body: dailyCount.toString() }).eq('id', dailyData[0].id);
+    } else {
+      await dbClient.from('entries').insert([{ section: 'system', title: dailyKey, body: '1' }]);
+    }
+    
     sessionStorage.setItem('visited', 'true');
     const countEl = document.getElementById('visit-count');
-    if (countEl) countEl.innerText = count.toLocaleString() + ' Views';
+    if (countEl) countEl.innerText = totalCount.toLocaleString() + ' Total Views';
   } catch (e) {
     console.error("Visit tracker error:", e);
   }
 }
+
+// Admin Dashboard Logic
+const statsBtn = document.getElementById('admin-stats');
+const statsModal = document.getElementById('stats-modal-backdrop');
+const statsClose = document.getElementById('stats-modal-close');
+
+if (statsBtn) {
+  statsBtn.addEventListener('click', async () => {
+    if(statsModal) statsModal.style.display = 'flex';
+    const content = document.getElementById('stats-content');
+    content.innerHTML = '<p style="color: var(--text-soft);">Loading live stats from database...</p>';
+    
+    try {
+      const { data } = await dbClient.from('entries').select('*').eq('section', 'system');
+      let total = 0;
+      let dailyRows = [];
+      
+      data.forEach(row => {
+        if (row.title === 'visits_tracker') {
+          total = parseInt(row.body);
+        } else if (row.title.startsWith('visits_')) {
+          const date = row.title.replace('visits_', '');
+          dailyRows.push({ date, count: parseInt(row.body) });
+        }
+      });
+      
+      dailyRows.sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
+      
+      let html = `<div class="stats-row"><span class="stats-label">All-Time Total</span> <span>${total.toLocaleString()}</span></div>`;
+      dailyRows.forEach(r => {
+        html += `<div class="stats-row"><span class="stats-label">${r.date}</span> <span>${r.count.toLocaleString()} visits</span></div>`;
+      });
+      
+      content.innerHTML = html;
+    } catch(e) {
+      content.innerHTML = '<p style="color: var(--danger);">Failed to load stats.</p>';
+    }
+  });
+}
+if (statsClose) {
+  statsClose.addEventListener('click', () => {
+    if(statsModal) statsModal.style.display = 'none';
+  });
+}
+
 trackVisit();
+
